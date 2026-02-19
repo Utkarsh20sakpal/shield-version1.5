@@ -1,0 +1,54 @@
+services:
+  # ── Backend API (Node.js / Express) ──────────────────────────────────────────
+  - type: web
+    name: shield-server
+    runtime: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: node src/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGO_URI
+        sync: false          # Set this manually in Render dashboard — your Atlas URI
+      - key: JWT_SECRET
+        generateValue: true  # Render auto-generates a secure random value
+      - key: CLIENT_ORIGIN
+        sync: false          # Set to your Render static site URL after deploying client
+      - key: EMAIL_USER
+        sync: false          # Your Gmail/SMTP address
+      - key: EMAIL_PASS
+        sync: false          # Your Gmail app password
+    healthCheckPath: /health
+
+  # ── Frontend (Vite React — deployed as Static Site) ──────────────────────────
+  - type: static
+    name: shield-client
+    rootDir: client
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false          # Set to your server URL, e.g. https://shield-server.onrender.com/api
+      - key: VITE_SOCKET_URL
+        sync: false          # Set to your server URL, e.g. https://shield-server.onrender.com
+      # Firebase env vars — set all in Render dashboard
+      - key: VITE_FIREBASE_API_KEY
+        sync: false
+      - key: VITE_FIREBASE_AUTH_DOMAIN
+        sync: false
+      - key: VITE_FIREBASE_PROJECT_ID
+        sync: false
+      - key: VITE_FIREBASE_STORAGE_BUCKET
+        sync: false
+      - key: VITE_FIREBASE_MESSAGING_SENDER_ID
+        sync: false
+      - key: VITE_FIREBASE_APP_ID
+        sync: false
+    routes:
+      # SPA fallback — send all routes to index.html so React Router works
+      - type: rewrite
+        source: /*
+        destination: /index.html

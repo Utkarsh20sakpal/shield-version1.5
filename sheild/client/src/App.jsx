@@ -18,7 +18,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 const queryClient = new QueryClient()
 
 const AppLayout = ({ children }) => {
-  const { token } = useAuth()
+  const { token, logout } = useAuth()
   return (
     <div className="min-h-screen app-gradient flex flex-col">
       <nav className="sticky top-0 z-10 glass-effect border-b-2 border-slate-700 shadow-professional">
@@ -46,7 +46,7 @@ const AppLayout = ({ children }) => {
           </div>
           <div className="ml-auto text-base text-slate-200">
             {token ? (
-              <button onClick={() => useAuth.getState().logout()} className="px-6 py-2.5 rounded-lg bg-slate-800 border-2 border-slate-600 hover:bg-slate-700 hover:border-slate-500 transition-all font-medium hover:scale-105 shadow-lg text-white">Logout</button>
+              <button onClick={logout} className="px-6 py-2.5 rounded-lg bg-slate-800 border-2 border-slate-600 hover:bg-slate-700 hover:border-slate-500 transition-all font-medium hover:scale-105 shadow-lg text-white">Logout</button>
             ) : (
               <Link to="/login" className="hover:text-cyan-300 transition-colors font-medium">Login</Link>
             )}
@@ -64,7 +64,7 @@ const AppLayout = ({ children }) => {
 const RequireAuth = ({ children }) => {
   const { token, loading } = useAuth()
   const location = useLocation()
-  
+
   // Wait for auth to initialize
   if (loading) {
     return (
@@ -73,7 +73,7 @@ const RequireAuth = ({ children }) => {
       </div>
     )
   }
-  
+
   if (!token) return <Navigate to="/login" state={{ from: location }} replace />
   return children
 }

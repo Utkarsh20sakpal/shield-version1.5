@@ -17,7 +17,20 @@ export const initializeSockets = (httpServer, logger) => {
 
   const io = new Server(httpServer, {
     cors: {
-      origin: allowedOrigins.length > 0 ? allowedOrigins : true, // Fallback to true if no origins configured
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        if (isProduction) {
+          return allowedOrigins.includes(origin)
+            ? callback(null, true)
+            : callback(new Error('CORS not allowed'), false);
+        }
+        // Dev: allow any localhost port, 127.0.0.1 port, or private network IP
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        if (/^http:\/\/localhost:\d+$/.test(origin)) return callback(null, true);
+        if (/^http:\/\/127\.0\.0\.1:\d+$/.test(origin)) return callback(null, true);
+        if (/^http:\/\/(192\.168|10\.|172\.(1[6-9]|2\d|3[01]))\.\d{1,3}\.\d{1,3}:\d+$/.test(origin)) return callback(null, true);
+        return callback(new Error('CORS not allowed'), false);
+      },
       credentials: true,
       methods: ['GET', 'POST'],
     },
@@ -71,7 +84,7 @@ export const initializeSockets = (httpServer, logger) => {
     for (const p of payload) {
       let alertTriggered = false;
       let alertData = null;
-      
+
       // Check temperature threshold
       if (p.temperature > 85) {
         alertData = {
@@ -132,11 +145,11 @@ export const initializeSockets = (httpServer, logger) => {
         };
         alertTriggered = true;
       }
-      
+
       if (alertTriggered && alertData) {
         console.log('Emitting detailed alert:', alertData);
         alertsNamespace.emit('alert', alertData);
-        
+
         // Send email notification to maintenance head (async operation)
         (async () => {
           try {
@@ -154,7 +167,7 @@ export const initializeSockets = (httpServer, logger) => {
             console.error('Unexpected error sending email notification:', emailError.message);
           }
         })();
-        
+
         // Emit maintenance notification
         alertsNamespace.emit('maintenance_alert', {
           ...alertData,

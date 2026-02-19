@@ -65,7 +65,7 @@ export default function Alerts() {
           try {
             const failurePredictions = predictFailures(data)
             console.log('Failure predictions for alerts:', failurePredictions)
-            
+
             if (failurePredictions && failurePredictions.length > 0) {
               failurePredictions.forEach((prediction, index) => {
                 // Create alerts for all predictions
@@ -76,7 +76,7 @@ export default function Alerts() {
                   'medium': 'medium',
                   'low': 'medium' // Even low risk gets medium severity alert
                 }
-                
+
                 newAlerts.push({
                   id: `failure-${prediction.id}-${data.timestamp}-${index}`,
                   message: `${prediction.component} failure predicted (${prediction.probability}% probability). ${prediction.symptoms.slice(0, 2).join(', ')}.`,
@@ -93,8 +93,8 @@ export default function Alerts() {
                     recommendedAction: prediction.probability >= 70
                       ? 'Immediate inspection and maintenance required'
                       : prediction.probability >= 50
-                      ? 'Schedule maintenance within 24-48 hours'
-                      : 'Monitor closely and plan preventive maintenance'
+                        ? 'Schedule maintenance within 24-48 hours'
+                        : 'Monitor closely and plan preventive maintenance'
                   }
                 })
               })
@@ -113,13 +113,13 @@ export default function Alerts() {
                 .filter(a => a.type === 'failure_prediction')
                 .map(a => a.failurePrediction?.component)
             )
-            
+
             const uniqueNewAlerts = newAlerts.filter(a => {
               // For failure predictions, replace old ones for the same component
               if (a.type === 'failure_prediction' && a.failurePrediction) {
                 const component = a.failurePrediction.component
                 // Remove old alert for this component
-                const filtered = prev.filter(p => 
+                const filtered = prev.filter(p =>
                   !(p.type === 'failure_prediction' && p.failurePrediction?.component === component)
                 )
                 return true // Add new one
@@ -127,19 +127,19 @@ export default function Alerts() {
               // For other alerts, check by ID
               return !existingIds.has(a.id)
             })
-            
+
             // Remove old failure predictions for components that have new ones
             const failureComponents = new Set(
               uniqueNewAlerts
                 .filter(a => a.type === 'failure_prediction')
                 .map(a => a.failurePrediction?.component)
             )
-            const filteredPrev = prev.filter(p => 
-              !(p.type === 'failure_prediction' && 
-                p.failurePrediction && 
+            const filteredPrev = prev.filter(p =>
+              !(p.type === 'failure_prediction' &&
+                p.failurePrediction &&
                 failureComponents.has(p.failurePrediction.component))
             )
-            
+
             return [...filteredPrev, ...uniqueNewAlerts]
               .sort((a, b) => b.timestamp - a.timestamp)
               .slice(0, 100) // Keep last 100 alerts
@@ -153,8 +153,8 @@ export default function Alerts() {
     return () => {
       if (unsubscribe) {
         unsubscribe()
+      }
     }
-  }
   }, [])
 
   // GSAP animations - only run once on initial load
@@ -246,11 +246,11 @@ export default function Alerts() {
                     Edit
                   </button>
                 )}
-          </div>
+              </div>
               {editingThreshold === feature ? (
                 <div className="flex gap-2">
-            <input 
-              type="number" 
+                  <input
+                    type="number"
                     step="0.1"
                     defaultValue={value}
                     onBlur={(e) => handleThresholdUpdate(feature, e.target.value)}
@@ -299,8 +299,8 @@ export default function Alerts() {
               <div className="text-lg font-semibold text-slate-200">
                 {deviceData.features?.vib_rms?.toFixed(2) || 'N/A'} m/s²
               </div>
-          </div>
-          <div>
+            </div>
+            <div>
               <div className="text-sm text-slate-400 mb-1">Current</div>
               <div className="text-lg font-semibold text-slate-200">
                 {deviceData.features?.current_rms?.toFixed(2) || 'N/A'} A

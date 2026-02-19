@@ -24,12 +24,12 @@ console.log('Loading .env from:', envPath);
 if (fs.existsSync(envPath)) {
   // Always try dotenv first
   const result = dotenv.config({ path: envPath });
-  
+
   if (result.error) {
     console.error('✗ Error loading .env:', result.error.message);
   } else {
     console.log('✓ .env file loaded via dotenv');
-    
+
     // Check if dotenv parsed variables
     if (result.parsed && Object.keys(result.parsed).length > 0) {
       console.log(`✓ Parsed ${Object.keys(result.parsed).length} variables via dotenv`);
@@ -38,33 +38,33 @@ if (fs.existsSync(envPath)) {
       console.log('⚠ Dotenv parsed 0 variables');
     }
   }
-  
+
   // ALWAYS run manual parsing as a backup/override to ensure all variables are loaded
   console.log('→ Running manual parse to ensure all variables are loaded...');
   const content = fs.readFileSync(envPath, 'utf-8');
   const lines = content.split(/\r?\n/);
   let manualCount = 0;
   const seenKeys = new Set();
-  
+
   for (const line of lines) {
     const trimmed = line.trim();
     if (trimmed && !trimmed.startsWith('#') && trimmed.includes('=')) {
       const equalIndex = trimmed.indexOf('=');
       const key = trimmed.substring(0, equalIndex).trim();
       let value = trimmed.substring(equalIndex + 1).trim();
-      
+
       // Remove quotes if present (both single and double)
-      if ((value.startsWith('"') && value.endsWith('"')) || 
-          (value.startsWith("'") && value.endsWith("'"))) {
+      if ((value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))) {
         value = value.slice(1, -1);
       }
-      
+
       // Remove duplicate JWT_SECRET if found
       if (key === 'JWT_SECRET' && seenKeys.has('JWT_SECRET')) {
         console.log(`  ⚠ Skipping duplicate ${key}`);
         continue;
       }
-      
+
       if (key && value) {
         // Always set, even if already exists (override to ensure correct values)
         process.env[key] = value;
@@ -75,7 +75,7 @@ if (fs.existsSync(envPath)) {
       }
     }
   }
-  
+
   if (manualCount > 0) {
     console.log(`✓✓ Manually loaded/verified ${manualCount} variables`);
     console.log(`  Keys: ${Array.from(seenKeys).join(', ')}`);
@@ -190,7 +190,7 @@ app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
-    
+
     // In production, only allow configured origins
     if (isProduction) {
       if (allowedOrigins.some((o) => origin === o)) {
@@ -199,10 +199,15 @@ app.use(cors({
       logger.warn(`CORS blocked origin: ${origin}`);
       return callback(new Error('CORS not allowed'), false);
     }
-    
+
     // In development, be more permissive
     if (allowedOrigins.some((o) => origin === o)) return callback(null, true);
-    if (/^http:\/\/localhost:51\d{2}$/.test(origin)) return callback(null, true);
+    // Allow any localhost port in dev
+    if (/^http:\/\/localhost:\d+$/.test(origin)) return callback(null, true);
+    if (/^http:\/\/127\.0\.0\.1:\d+$/.test(origin)) return callback(null, true);
+    // Allow local network IPs (192.168.x.x, 10.x.x.x, 172.16-31.x.x) in dev
+    if (/^http:\/\/(192\.168|10\.|172\.(1[6-9]|2\d|3[01]))\.\d{1,3}\.\d{1,3}:\d+$/.test(origin)) return callback(null, true);
+    logger.warn(`CORS blocked origin in dev: ${origin}`);
     return callback(new Error('CORS not allowed'), false);
   },
   credentials: true,
@@ -231,9 +236,9 @@ app.use('/api', (req, res) => {
 if (process.env.NODE_ENV === 'production') {
   const clientBuildPath = join(serverRoot, '../client/dist');
   console.log('Serving static files from:', clientBuildPath);
-  
+
   app.use(express.static(clientBuildPath));
-  
+
   // Handle SPA routing - send index.html for any other requests
   // Use regex pattern for catch-all to avoid path-to-regexp v8 issues
   app.get(/(.*)/, (req, res) => {

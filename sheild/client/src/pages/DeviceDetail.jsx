@@ -54,7 +54,7 @@ export default function DeviceDetail() {
             edge_health: log.edge_health || 0
           }))
           setHistory(formattedHistory)
-          
+
           // Also save to localStorage as backup
           localStorage.setItem(`sensor_history_${deviceId}`, JSON.stringify(formattedHistory))
         }
@@ -125,14 +125,14 @@ export default function DeviceDetail() {
               current_rms: data.features?.current_rms || 0,
               edge_health: data.edge_health || 0
             }].slice(-50) // Keep last 50 data points
-            
+
             // Save to localStorage as backup
             try {
               localStorage.setItem(`sensor_history_${deviceId}`, JSON.stringify(newHistory))
             } catch (e) {
               console.error('Failed to save history to localStorage:', e)
             }
-            
+
             return newHistory
           })
 
@@ -159,6 +159,8 @@ export default function DeviceDetail() {
           previousDataRef.current = data
 
           // Fetch ML prediction
+          // Compute healthStatus locally for use inside this async callback
+          const localHealthStatus = getHealthStatus(data.edge_health || 0)
           if (data.features && data.features.temp_mean !== undefined) {
             setMLLoading(true)
             setMLError(null)
@@ -171,7 +173,7 @@ export default function DeviceDetail() {
               setMLLoading(false)
               if (prediction) {
                 setMLPrediction(prediction)
-                
+
                 // Calculate priority score
                 const priority = calculatePriorityScore({
                   health_score: prediction.health_score || data.edge_health || 0,
@@ -183,7 +185,7 @@ export default function DeviceDetail() {
                 // Set fallback prediction if ML returns null
                 setMLPrediction({
                   health_score: data.edge_health || 0,
-                  status: healthStatus.label.toLowerCase(),
+                  status: localHealthStatus.label.toLowerCase(),
                   rul_hours: null,
                   anomaly: 0,
                   anomaly_score: 0
@@ -196,7 +198,7 @@ export default function DeviceDetail() {
               // Set fallback prediction on error
               setMLPrediction({
                 health_score: data.edge_health || 0,
-                status: healthStatus.label.toLowerCase(),
+                status: localHealthStatus.label.toLowerCase(),
                 rul_hours: null,
                 anomaly: 0,
                 anomaly_score: 0
@@ -206,7 +208,7 @@ export default function DeviceDetail() {
             // If no features, set fallback immediately
             setMLPrediction({
               health_score: data.edge_health || 0,
-              status: healthStatus.label.toLowerCase(),
+              status: localHealthStatus.label.toLowerCase(),
               rul_hours: null,
               anomaly: 0,
               anomaly_score: 0
@@ -360,7 +362,7 @@ export default function DeviceDetail() {
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl md:text-3xl font-bold text-white">{deviceData.device_id || deviceId}</h1>
               {dataQuality && (
-                <div 
+                <div
                   className={`text-xs px-2 py-1 rounded border ${getQualityBadgeColor(dataQuality.status)}`}
                   title={dataQuality.reason}
                 >
@@ -405,21 +407,20 @@ export default function DeviceDetail() {
                   strokeDashoffset={`${2 * Math.PI * 80 * (1 - (deviceData.edge_health || 0) / 100)}`}
                   className={
                     healthStatus.color === 'green' ? 'text-green-400' :
-                    healthStatus.color === 'yellow' ? 'text-yellow-400' :
-                    healthStatus.color === 'red' ? 'text-red-400' :
-                    'text-slate-400'
+                      healthStatus.color === 'yellow' ? 'text-yellow-400' :
+                        healthStatus.color === 'red' ? 'text-red-400' :
+                          'text-slate-400'
                   }
                   strokeLinecap="round"
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center">
-                  <div className={`text-4xl font-bold ${
-                    healthStatus.color === 'green' ? 'text-green-400' :
-                    healthStatus.color === 'yellow' ? 'text-yellow-400' :
-                    healthStatus.color === 'red' ? 'text-red-400' :
-                    'text-slate-400'
-                  }`}>
+                  <div className={`text-4xl font-bold ${healthStatus.color === 'green' ? 'text-green-400' :
+                      healthStatus.color === 'yellow' ? 'text-yellow-400' :
+                        healthStatus.color === 'red' ? 'text-red-400' :
+                          'text-slate-400'
+                    }`}>
                     {deviceData.edge_health || 0}%
                   </div>
                 </div>
@@ -438,7 +439,7 @@ export default function DeviceDetail() {
             <div>
               <div className="text-sm text-slate-400 mb-2">Current Condition</div>
               <div className="text-lg font-semibold text-slate-200">
-                {mlPrediction?.status 
+                {mlPrediction?.status
                   ? mlPrediction.status.charAt(0).toUpperCase() + mlPrediction.status.slice(1)
                   : healthStatus.label
                 }
@@ -446,21 +447,20 @@ export default function DeviceDetail() {
             </div>
             <div>
               <div className="text-sm text-slate-400 mb-2">Status Severity</div>
-              <div className={`inline-block px-3 py-1 rounded ${
-                healthStatus.severity === 'high' ? 'bg-red-900 text-red-200' :
-                healthStatus.severity === 'medium' ? 'bg-yellow-900 text-yellow-200' :
-                'bg-green-900 text-green-200'
-              }`}>
+              <div className={`inline-block px-3 py-1 rounded ${healthStatus.severity === 'high' ? 'bg-red-900 text-red-200' :
+                  healthStatus.severity === 'medium' ? 'bg-yellow-900 text-yellow-200' :
+                    'bg-green-900 text-green-200'
+                }`}>
                 {healthStatus.severity}
               </div>
             </div>
-            
+
             {/* RUL Section - Always show, with loading state */}
             <div className="pt-4 border-t border-slate-700">
               <div className="flex items-center justify-between mb-2">
                 <div className="text-sm text-slate-400">Remaining Useful Life (RUL)</div>
                 {priorityScore && (
-                  <div 
+                  <div
                     className={`text-xs px-2 py-0.5 rounded border ${getPriorityBadgeColor(priorityScore.priority)}`}
                     title={getPriorityDescription(priorityScore.priority)}
                   >
@@ -521,8 +521,8 @@ export default function DeviceDetail() {
           <h2 className="text-xl font-semibold text-slate-200 mb-4">What Changed?</h2>
           <div className="space-y-2">
             {changes.map((change, index) => (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 className={`text-sm ${getChangeColor(change)}`}
               >
                 {formatChange(change)}
@@ -578,10 +578,9 @@ export default function DeviceDetail() {
                     <div className="font-semibold text-yellow-400">{warning.label}</div>
                     <div className="text-sm text-slate-300 mt-1">{warning.message}</div>
                   </div>
-                  <span className={`px-3 py-1 rounded text-xs font-medium ${
-                    warning.severity === 'high' ? 'bg-red-900 text-red-200' :
-                    'bg-yellow-900 text-yellow-200'
-                  }`}>
+                  <span className={`px-3 py-1 rounded text-xs font-medium ${warning.severity === 'high' ? 'bg-red-900 text-red-200' :
+                      'bg-yellow-900 text-yellow-200'
+                    }`}>
                     {warning.severity}
                   </span>
                 </div>
@@ -657,33 +656,7 @@ export default function DeviceDetail() {
         )}
       </div>
 
-      {/* Warnings */}
-      {warnings.length > 0 && (
-        <div>
-          <h2 className="text-xl font-semibold text-slate-200 mb-4">Active Warnings</h2>
-          <div className="space-y-2">
-            {warnings.map((warning, index) => (
-              <div
-                key={index}
-                className="bg-yellow-900 border-2 border-yellow-500 rounded-lg p-4"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-semibold text-yellow-400">{warning.label}</div>
-                    <div className="text-sm text-slate-300 mt-1">{warning.message}</div>
-                  </div>
-                  <span className={`px-3 py-1 rounded text-xs font-medium ${
-                    warning.severity === 'high' ? 'bg-red-900 text-red-200' :
-                    'bg-yellow-900 text-yellow-200'
-                  }`}>
-                    {warning.severity}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Warnings section intentionally removed here (already rendered above near sensor cards) */}
 
       {/* Real-time Chart */}
       {history.length > 0 && (
