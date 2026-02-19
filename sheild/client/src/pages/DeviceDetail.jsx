@@ -354,7 +354,7 @@ export default function DeviceDetail() {
   const warnings = generateFeatureWarnings(features, thresholds)
 
   return (
-    <div ref={containerRef} className="p-6 md:p-8 space-y-6 md:space-y-8 max-w-7xl mx-auto">
+    <div ref={containerRef} className="p-4 sm:p-6 md:p-8 space-y-6 md:space-y-8 max-w-7xl mx-auto">
       {/* Device Header */}
       <div ref={headerRef} className="bg-slate-900 border-2 border-slate-600 rounded-xl p-6 shadow-xl">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -389,8 +389,8 @@ export default function DeviceDetail() {
         </div>
       </div>
 
-      {/* Health Score & Predictive Status - Side by Side */}
-      <div className="grid md:grid-cols-2 gap-6">
+      {/* Health Score & Predictive Status */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div ref={healthGaugeRef} className="bg-slate-900 border-2 border-slate-600 rounded-xl p-6 shadow-xl">
           <h2 className="text-xl font-semibold text-slate-200 mb-4">Health Score</h2>
           <div className="flex items-center justify-center mb-4">
@@ -547,7 +547,7 @@ export default function DeviceDetail() {
       {/* Feature Cards - Full Width Grid */}
       <div>
         <h2 className="text-xl font-semibold text-slate-200 mb-4">Real-time Features</h2>
-        <div ref={cardsRef} className="grid md:grid-cols-3 gap-6">
+        <div ref={cardsRef} className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
           <SensorCard
             label="Temperature"
             value={features.temp_mean}
@@ -671,7 +671,8 @@ export default function DeviceDetail() {
       {history.length > 0 && (
         <div className="bg-slate-900 border-2 border-slate-600 rounded-xl p-6 shadow-xl">
           <h2 className="text-xl font-semibold text-slate-200 mb-4">Real-time Feature Trends</h2>
-          <ResponsiveContainer width="100%" height={400}>
+          <ResponsiveContainer width="100%" height={typeof window !== 'undefined' && window.innerWidth < 640 ? 220 : 400}>
+
             <LineChart data={history}>
               <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
               <XAxis dataKey="time" stroke="#64748b" />
