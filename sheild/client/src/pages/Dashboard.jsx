@@ -49,7 +49,7 @@ export default function Dashboard() {
             edge_health: log.edge_health || 0
           }))
           setHistory(formattedHistory)
-          
+
           // Also save to localStorage as backup
           localStorage.setItem('sensor_history_PM_001', JSON.stringify(formattedHistory))
         }
@@ -126,14 +126,14 @@ export default function Dashboard() {
               current_rms: data.features?.current_rms || 0,
               edge_health: data.edge_health || 0
             }].slice(-20) // Keep last 20 data points
-            
+
             // Save to localStorage as backup
             try {
               localStorage.setItem('sensor_history_PM_001', JSON.stringify(newHistory))
             } catch (e) {
               console.error('Failed to save history to localStorage:', e)
             }
-            
+
             return newHistory
           })
 
@@ -144,7 +144,7 @@ export default function Dashboard() {
 
           // Create alerts from warnings and health status
           const newAlerts = []
-          
+
           warnings.forEach((warning, index) => {
             newAlerts.push({
               id: `warning-${data.timestamp}-${index}`,
@@ -176,7 +176,7 @@ export default function Dashboard() {
                 'medium': 'medium',
                 'low': 'low'
               }
-              
+
               newAlerts.push({
                 id: `failure-${prediction.id}-${data.timestamp}-${index}`,
                 message: `${prediction.component} failure predicted (${prediction.probability}% probability). ${prediction.symptoms.join(', ')}.`,
@@ -193,8 +193,8 @@ export default function Dashboard() {
                   recommendedAction: prediction.probability >= 70
                     ? 'Immediate inspection and maintenance required'
                     : prediction.probability >= 50
-                    ? 'Schedule maintenance within 24-48 hours'
-                    : 'Monitor closely and plan preventive maintenance'
+                      ? 'Schedule maintenance within 24-48 hours'
+                      : 'Monitor closely and plan preventive maintenance'
                 }
               })
             }
@@ -239,7 +239,7 @@ export default function Dashboard() {
             }).then(prediction => {
               if (prediction) {
                 setMLPrediction(prediction)
-                
+
                 // Calculate priority score
                 const priority = calculatePriorityScore({
                   health_score: prediction.health_score || data.edge_health || 0,
@@ -335,7 +335,7 @@ export default function Dashboard() {
   if (error && !deviceData) {
     const errorMessage = error?.message || error || 'Unknown error'
     const errorCode = error?.code || ''
-    
+
     return (
       <div className="p-8">
         <div className="bg-red-900 border-2 border-red-500 rounded-lg p-6 text-red-200 shadow-lg">
@@ -383,24 +383,33 @@ export default function Dashboard() {
       <div ref={headerRef} className="bg-slate-900 border-2 border-slate-600 rounded-xl p-6 shadow-xl">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl font-bold text-white">Device PM_001</h1>
               {dataQuality && (
-                <div 
+                <div
                   className={`text-xs px-2 py-1 rounded border ${getQualityBadgeColor(dataQuality.status)}`}
                   title={dataQuality.reason}
                 >
                   {dataQuality.status === 'good' ? '✓ Good' : '⚠ Degraded'}
                 </div>
               )}
+              {deviceData._isStale && (
+                <div className="flex items-center gap-1.5 text-xs px-2 py-1 rounded border border-amber-500 bg-amber-950 text-amber-300">
+                  <span className="inline-block w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                  Machine Offline — Last Known Reading
+                </div>
+              )}
             </div>
             <p className="text-sm text-white mt-1">
-              Last updated: {formatTimestamp(deviceData.timestamp)} ({getTimeAgo(deviceData.timestamp)})
+              {deviceData._isStale
+                ? <span className="text-amber-400">⚠ Last reading: {formatTimestamp(deviceData.timestamp)} ({getTimeAgo(deviceData.timestamp)}) — machine may be offline</span>
+                : <>Last updated: {formatTimestamp(deviceData.timestamp)} ({getTimeAgo(deviceData.timestamp)})</>
+              }
             </p>
           </div>
           <StatusIndicator healthScore={deviceData.edge_health} size="lg" />
         </div>
-        
+
         <div className={`grid gap-4 mt-6 ${mlPrediction ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
           <div className="bg-slate-900 border-2 border-slate-600 rounded-lg p-4">
             <div className="text-sm text-white mb-1 font-medium">Overall Health</div>
@@ -412,7 +421,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-between mb-1">
                 <div className="text-sm text-white font-medium">Remaining Useful Life (RUL)</div>
                 {priorityScore && (
-                  <div 
+                  <div
                     className={`text-xs px-2 py-0.5 rounded border ${getPriorityBadgeColor(priorityScore.priority)}`}
                     title={getPriorityDescription(priorityScore.priority)}
                   >
@@ -470,7 +479,7 @@ export default function Dashboard() {
           />
         </div>
       </div>
-      
+
       {/* Mini Live Trend Charts */}
       {history.length > 0 && (
         <div>
@@ -495,8 +504,8 @@ export default function Dashboard() {
                       dataKey={feature}
                       stroke={
                         feature === 'temp_mean' ? '#60a5fa' :
-                        feature === 'vib_rms' ? '#22d3ee' :
-                        '#34d399'
+                          feature === 'vib_rms' ? '#22d3ee' :
+                            '#34d399'
                       }
                       strokeWidth={2}
                       dot={false}

@@ -369,9 +369,18 @@ export default function DeviceDetail() {
                   {dataQuality.status === 'good' ? '✓ Good' : '⚠ Degraded'}
                 </div>
               )}
+              {deviceData._isStale && (
+                <div className="flex items-center gap-1.5 text-xs px-2 py-1 rounded border border-amber-500 bg-amber-950 text-amber-300">
+                  <span className="inline-block w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                  Machine Offline — Last Known Reading
+                </div>
+              )}
             </div>
             <p className="text-sm text-slate-400 mt-2">
-              Last updated: {formatTimestamp(deviceData.timestamp)} ({getTimeAgo(deviceData.timestamp)})
+              {deviceData._isStale
+                ? <span className="text-amber-400">⚠ Last reading: {formatTimestamp(deviceData.timestamp)} ({getTimeAgo(deviceData.timestamp)}) — machine may be offline</span>
+                : <>Last updated: {formatTimestamp(deviceData.timestamp)} ({getTimeAgo(deviceData.timestamp)})</>
+              }
             </p>
           </div>
           <div className="flex-shrink-0">
@@ -417,9 +426,9 @@ export default function DeviceDetail() {
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center">
                   <div className={`text-4xl font-bold ${healthStatus.color === 'green' ? 'text-green-400' :
-                      healthStatus.color === 'yellow' ? 'text-yellow-400' :
-                        healthStatus.color === 'red' ? 'text-red-400' :
-                          'text-slate-400'
+                    healthStatus.color === 'yellow' ? 'text-yellow-400' :
+                      healthStatus.color === 'red' ? 'text-red-400' :
+                        'text-slate-400'
                     }`}>
                     {deviceData.edge_health || 0}%
                   </div>
@@ -448,8 +457,8 @@ export default function DeviceDetail() {
             <div>
               <div className="text-sm text-slate-400 mb-2">Status Severity</div>
               <div className={`inline-block px-3 py-1 rounded ${healthStatus.severity === 'high' ? 'bg-red-900 text-red-200' :
-                  healthStatus.severity === 'medium' ? 'bg-yellow-900 text-yellow-200' :
-                    'bg-green-900 text-green-200'
+                healthStatus.severity === 'medium' ? 'bg-yellow-900 text-yellow-200' :
+                  'bg-green-900 text-green-200'
                 }`}>
                 {healthStatus.severity}
               </div>
@@ -579,7 +588,7 @@ export default function DeviceDetail() {
                     <div className="text-sm text-slate-300 mt-1">{warning.message}</div>
                   </div>
                   <span className={`px-3 py-1 rounded text-xs font-medium ${warning.severity === 'high' ? 'bg-red-900 text-red-200' :
-                      'bg-yellow-900 text-yellow-200'
+                    'bg-yellow-900 text-yellow-200'
                     }`}>
                     {warning.severity}
                   </span>

@@ -63,22 +63,34 @@ const normalizeFirebaseData = (raw) => {
   return { ...raw, features }
 }
 
+// Per-device cache of the last good reading received from Firestore.
+// When the machine goes offline (Firebase stops sending), we return
+// the cached reading with _isStale: true so the UI never goes blank.
+const lastKnownDataCache = {}
+
 /**
- * Subscribe to real-time data from Firestore
+ * Subscribe to real-time data from Firestore.
+ * Always delivers data to the callback — even when the machine is offline,
+ * the last known reading is returned with `data._isStale = true`.
+ *
  * @param {string} deviceId - Device ID (default: PM_001)
- * @param {function} callback - Callback function that receives the data snapshot
+ * @param {function} callback - fn(data, error) — data always has a value if
+ *   there was ever a successful reading; check data._isStale for freshness.
  * @returns {function} Unsubscribe function
  */
 export const subscribeToDeviceData = (deviceId = 'PM_001', callback) => {
 
   if (!db) {
     console.warn('Firestore not initialized')
-    callback(null, new Error('Firestore not initialized'))
+    // If we have cached data, return it as stale instead of an error
+    if (lastKnownDataCache[deviceId]) {
+      callback({ ...lastKnownDataCache[deviceId], _isStale: true, _offlineSince: lastKnownDataCache[deviceId]._lastSeen })
+    } else {
+      callback(null, new Error('Firestore not initialized'))
+    }
     return () => { }
   }
 
-  // Firestore path: devices/PM_001/live/latest
-  // Structure: collection/document/subcollection/document
   const docRef = doc(db, 'devices', deviceId, 'live', 'latest')
   console.log('Subscribing to Firestore document:', `devices/${deviceId}/live/latest`)
 
@@ -87,33 +99,53 @@ export const subscribeToDeviceData = (deviceId = 'PM_001', callback) => {
       if (snapshot.exists()) {
         const raw = snapshot.data()
         const data = normalizeFirebaseData(raw)
+        // Fresh reading — update cache and deliver with isStale: false
+        const enriched = { ...data, _isStale: false, _lastSeen: Date.now() }
+        lastKnownDataCache[deviceId] = enriched
         console.log('Firestore data received (normalized):', data)
-        callback(data)
+        callback(enriched)
       } else {
-        console.warn(`No data found at Firestore path: devices/${deviceId}/live/latest`)
-        // Don't treat empty data as error - just pass null
-        callback(null)
+        // Document exists in path but has no data (machine went offline / cleared)
+        console.warn(`No data at Firestore path: devices/${deviceId}/live/latest — machine may be offline`)
+        if (lastKnownDataCache[deviceId]) {
+          // Return last known reading with stale flag so UI stays populated
+          const stale = {
+            ...lastKnownDataCache[deviceId],
+            _isStale: true,
+            _offlineSince: lastKnownDataCache[deviceId]._lastSeen,
+          }
+          callback(stale)
+        } else {
+          // No cached data at all — first load with no Firestore data
+          callback(null)
+        }
       }
     },
     (error) => {
-      console.error('Firestore subscription error:', error)
-      console.error('Error code:', error.code)
-      console.error('Error message:', error.message)
+      console.error('Firestore subscription error:', error.code, error.message)
 
-      // Check if it's a permission error
-      if (error.code === 'permission-denied') {
-        callback(null, new Error(`Permission denied. Please check Firestore Rules allow read access to: devices/${deviceId}/live/latest`))
+      if (lastKnownDataCache[deviceId]) {
+        // Network / permission error but we have cached data — show it as stale
+        const stale = {
+          ...lastKnownDataCache[deviceId],
+          _isStale: true,
+          _offlineSince: lastKnownDataCache[deviceId]._lastSeen,
+        }
+        console.warn('Firestore error — showing last known reading as stale')
+        callback(stale)
       } else {
-        callback(null, error)
+        // No cache — surface the error normally
+        const msg = error.code === 'permission-denied'
+          ? `Permission denied reading devices/${deviceId}/live/latest`
+          : error.message
+        callback(null, new Error(msg))
       }
     }
   )
 
-  // Return unsubscribe function
-  return () => {
-    unsubscribe()
-  }
+  return () => { unsubscribe() }
 }
+
 
 /**
  * Get current device data once (non-realtime)
