@@ -39,7 +39,7 @@ export default function History() {
           }))
           setHistory(formattedHistory)
           setLoading(false)
-          
+
           // Also save to localStorage as backup
           localStorage.setItem('sensor_history_full_PM_001', JSON.stringify(formattedHistory))
         } else {
@@ -119,14 +119,14 @@ export default function History() {
               return prev
             }
             const updated = [...prev, newPoint].slice(-5000) // Keep last 5000 points for history
-            
+
             // Save to localStorage as backup
             try {
               localStorage.setItem('sensor_history_full_PM_001', JSON.stringify(updated))
             } catch (e) {
               console.error('Failed to save history to localStorage:', e)
             }
-            
+
             return updated
           })
         }
@@ -151,7 +151,7 @@ export default function History() {
       if (startDate && endDate) {
         const start = new Date(startDate).getTime() / 1000
         const end = new Date(endDate).getTime() / 1000 + 86400 // Add 1 day to include end date
-        filtered = history.filter(point => 
+        filtered = history.filter(point =>
           point.timestamp >= start && point.timestamp <= end
         )
       }
@@ -259,7 +259,7 @@ export default function History() {
   }, [timeRange])
 
   return (
-    <div ref={containerRef} className="p-6 max-w-7xl mx-auto">
+    <div ref={containerRef} className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-white mb-2">Device History</h1>
         <p className="text-slate-300">View and export historical device data</p>
@@ -267,7 +267,7 @@ export default function History() {
 
       {/* Controls */}
       <div ref={controlsRef} className="bg-slate-900 border-2 border-slate-600 rounded-lg p-6 mb-6">
-        <div className="grid md:grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-1 gap-4 mb-4">
           <div>
             <label className="block text-sm font-medium text-white mb-2">
               Time Range
@@ -315,7 +315,7 @@ export default function History() {
           )}
         </div>
 
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="text-white">
             <span className="font-semibold">Total Records: </span>
             <span className="text-cyan-300">{filteredHistory.length}</span>
@@ -323,7 +323,7 @@ export default function History() {
           <button
             onClick={exportToExcel}
             disabled={filteredHistory.length === 0}
-            className="px-6 py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-slate-700 disabled:cursor-not-allowed border-2 border-green-500 rounded-lg text-white font-semibold transition-all hover:scale-105 shadow-lg"
+            className="w-full sm:w-auto px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-700 disabled:cursor-not-allowed border-2 border-green-500 rounded-lg text-white font-semibold transition-all hover:scale-105 shadow-lg text-sm"
           >
             📥 Export to Excel
           </button>
@@ -372,11 +372,10 @@ export default function History() {
                     <td className="px-4 py-3 text-sm text-white text-right">{point.current_rms.toFixed(2)}</td>
                     <td className="px-4 py-3 text-sm text-white text-right">{point.current_std.toFixed(2)}</td>
                     <td className="px-4 py-3 text-sm text-right">
-                      <span className={`font-semibold ${
-                        point.edge_health >= 80 ? 'text-green-400' :
-                        point.edge_health >= 50 ? 'text-yellow-400' :
-                        'text-red-400'
-                      }`}>
+                      <span className={`font-semibold ${point.edge_health >= 80 ? 'text-green-400' :
+                          point.edge_health >= 50 ? 'text-yellow-400' :
+                            'text-red-400'
+                        }`}>
                         {point.edge_health.toFixed(2)}
                       </span>
                     </td>

@@ -213,7 +213,7 @@ export default function Alerts() {
   }
 
   return (
-    <div ref={containerRef} className="p-6 md:p-8 space-y-6 md:space-y-8 max-w-7xl mx-auto">
+    <div ref={containerRef} className="p-4 sm:p-6 md:p-8 space-y-6 md:space-y-8 max-w-7xl mx-auto">
       {/* Threshold Configuration */}
       <div ref={thresholdRef} className="bg-slate-900 border-2 border-slate-600 rounded-xl p-6 shadow-xl">
         <div className="flex items-center justify-between mb-4">
@@ -224,7 +224,7 @@ export default function Alerts() {
             </p>
           </div>
         </div>
-        <div className="grid md:grid-cols-3 gap-4 mt-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
           {Object.entries(thresholds).map(([feature, value]) => (
             <div key={feature} className="bg-slate-900 border-2 border-slate-600 rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
@@ -283,7 +283,7 @@ export default function Alerts() {
       {deviceData && (
         <div ref={statusRef} className="bg-slate-900 border-2 border-slate-600 rounded-xl p-6 shadow-xl">
           <h2 className="text-xl font-semibold text-slate-200 mb-4">Current Device Status</h2>
-          <div className="grid md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
             <div>
               <div className="text-sm text-slate-300 mb-1 font-medium">Health Score</div>
               <div className="text-2xl font-bold text-cyan-300">{deviceData.edge_health || 0}%</div>

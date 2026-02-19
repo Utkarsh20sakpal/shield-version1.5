@@ -673,10 +673,10 @@ export default function DeviceDetail() {
           <h2 className="text-xl font-semibold text-slate-200 mb-4">Real-time Feature Trends</h2>
           <ResponsiveContainer width="100%" height={typeof window !== 'undefined' && window.innerWidth < 640 ? 220 : 400}>
 
-            <LineChart data={history}>
+            <LineChart data={history} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-              <XAxis dataKey="time" stroke="#64748b" />
-              <YAxis stroke="#64748b" />
+              <XAxis dataKey="time" stroke="#64748b" tick={{ fontSize: 11 }} hide={window.innerWidth < 640} />
+              <YAxis stroke="#64748b" tick={{ fontSize: 11 }} width={40} />
               <Tooltip
                 contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '6px' }}
                 labelStyle={{ color: '#cbd5e1' }}

@@ -486,17 +486,16 @@ export default function Dashboard() {
           <h2 className="text-xl font-semibold text-slate-200 mb-4">Live Trends</h2>
           <div ref={chartsRef} className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
             {['temp_mean', 'vib_rms', 'current_rms'].map((feature) => (
-              <div key={feature} className="bg-slate-900 border-2 border-slate-600 rounded-lg p-4 shadow-lg">
+              <div key={feature} className="bg-slate-900 border-2 border-slate-600 rounded-lg p-3 md:p-4 shadow-lg">
                 <div className="text-sm text-white mb-2 capitalize font-medium">
-                  {feature.replace('_', ' ')}
+                  {feature === 'temp_mean' ? 'Temperature' : feature === 'vib_rms' ? 'Vibration' : 'Current'}
                 </div>
                 <ResponsiveContainer width="100%" height={150}>
-                  <LineChart data={history}>
+                  <LineChart data={history} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                    <XAxis dataKey="time" hide />
-                    <YAxis stroke="#64748b" />
+                    <YAxis stroke="#64748b" tick={{ fontSize: 10 }} width={38} />
                     <Tooltip
-                      contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '6px' }}
+                      contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '6px', fontSize: '11px' }}
                       labelStyle={{ color: '#cbd5e1' }}
                     />
                     <Line
