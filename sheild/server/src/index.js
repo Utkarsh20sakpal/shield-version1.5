@@ -227,29 +227,15 @@ app.get('/health', (_req, res) => {
 // API routes
 app.use('/api', apiRouter);
 
-// API 404 handler - MUST be after apiRouter but before static files/SPA catch-all
+// API 404 handler — pure API server, no static files served
 app.use('/api', (req, res) => {
   res.status(404).json({ message: 'API endpoint not found', path: req.originalUrl });
 });
 
-// Serve static files in production
-if (process.env.NODE_ENV === 'production') {
-  const clientBuildPath = join(serverRoot, '../client/dist');
-  console.log('Serving static files from:', clientBuildPath);
-
-  app.use(express.static(clientBuildPath));
-
-  // Handle SPA routing - send index.html for any other requests
-  // Use regex pattern for catch-all to avoid path-to-regexp v8 issues
-  app.get(/(.*)/, (req, res) => {
-    res.sendFile(join(clientBuildPath, 'index.html'));
-  });
-} else {
-  // 404 handler for development or API 404s
-  app.use((req, res) => {
-    res.status(404).json({ message: 'Not Found', path: req.originalUrl });
-  });
-}
+// Global 404 — catch any non-API routes (pure API server, no frontend served here)
+app.use((req, res) => {
+  res.status(404).json({ message: 'Not Found', path: req.originalUrl });
+});
 
 // Global error handler
 // eslint-disable-next-line no-unused-vars
@@ -265,15 +251,11 @@ const PORT = Number(process.env.PORT || 5000);
 const startServer = async () => {
   try {
     await connectToDatabase();
-    // Only start listening if we are not in a serverless environment (Vercel)
-    // or if we are explicitly told to listen (e.g. local dev)
-    if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
-      server.listen(PORT, () => {
-        logger.info(`Server listening on port ${PORT}`);
-        // Start scheduler for ML model training
-        schedulerService.start();
-      });
-    }
+    server.listen(PORT, () => {
+      logger.info(`Server listening on port ${PORT}`);
+      // Start scheduler for ML model training
+      schedulerService.start();
+    });
   } catch (error) {
     logger.error('Failed to connect to MongoDB', error);
     process.exit(1);
