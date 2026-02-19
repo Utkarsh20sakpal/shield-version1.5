@@ -39,28 +39,55 @@ try {
 }
 
 /**
+ * Normalize Firebase field names to what the rest of the app expects.
+ *
+ * Firestore sends:   features.temp_mean_C  and  features.current_rms_A
+ * The app expects:   features.temp_mean    and  features.current_rms
+ *
+ * This is the ONLY place that translates Firebase field names.
+ * No other file needs to change when Firebase fields are renamed.
+ */
+const normalizeFirebaseData = (raw) => {
+  if (!raw) return null
+
+  const rawFeatures = raw.features || {}
+  const features = {
+    // Temperature: Firebase uses temp_mean_C, app uses temp_mean
+    temp_mean: rawFeatures.temp_mean_C ?? rawFeatures.temp_mean ?? null,
+    // Vibration: same name in both — pass through
+    vib_rms: rawFeatures.vib_rms ?? null,
+    // Current: Firebase uses current_rms_A, app uses current_rms
+    current_rms: rawFeatures.current_rms_A ?? rawFeatures.current_rms ?? null,
+  }
+
+  return { ...raw, features }
+}
+
+/**
  * Subscribe to real-time data from Firestore
  * @param {string} deviceId - Device ID (default: PM_001)
  * @param {function} callback - Callback function that receives the data snapshot
  * @returns {function} Unsubscribe function
  */
 export const subscribeToDeviceData = (deviceId = 'PM_001', callback) => {
+
   if (!db) {
     console.warn('Firestore not initialized')
     callback(null, new Error('Firestore not initialized'))
-    return () => {}
+    return () => { }
   }
-  
+
   // Firestore path: devices/PM_001/live/latest
   // Structure: collection/document/subcollection/document
   const docRef = doc(db, 'devices', deviceId, 'live', 'latest')
   console.log('Subscribing to Firestore document:', `devices/${deviceId}/live/latest`)
 
-  const unsubscribe = onSnapshot(docRef, 
+  const unsubscribe = onSnapshot(docRef,
     (snapshot) => {
       if (snapshot.exists()) {
-        const data = snapshot.data()
-        console.log('Firestore data received:', data)
+        const raw = snapshot.data()
+        const data = normalizeFirebaseData(raw)
+        console.log('Firestore data received (normalized):', data)
         callback(data)
       } else {
         console.warn(`No data found at Firestore path: devices/${deviceId}/live/latest`)
@@ -72,7 +99,7 @@ export const subscribeToDeviceData = (deviceId = 'PM_001', callback) => {
       console.error('Firestore subscription error:', error)
       console.error('Error code:', error.code)
       console.error('Error message:', error.message)
-      
+
       // Check if it's a permission error
       if (error.code === 'permission-denied') {
         callback(null, new Error(`Permission denied. Please check Firestore Rules allow read access to: devices/${deviceId}/live/latest`))
@@ -97,13 +124,13 @@ export const getDeviceData = async (deviceId = 'PM_001') => {
   if (!db) {
     throw new Error('Firestore not initialized')
   }
-  
+
   const docRef = doc(db, 'devices', deviceId, 'live', 'latest')
-  
+
   try {
     const snapshot = await getDoc(docRef)
     if (snapshot.exists()) {
-      return snapshot.data()
+      return normalizeFirebaseData(snapshot.data())
     } else {
       throw new Error(`No data found at Firestore path: devices/${deviceId}/live/latest`)
     }
